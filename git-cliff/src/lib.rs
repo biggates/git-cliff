@@ -39,6 +39,7 @@ use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
 };
+use indexmap::map::IndexMap;
 use std::env;
 use std::fs::{
 	self,
@@ -285,6 +286,40 @@ fn process_repository<'a>(
 			};
 			releases[0].previous = Some(Box::new(previous_release));
 		}
+	}
+
+	// TODO: for each release, manually group commits
+	for release in releases.iter_mut().filter(|r| !r.commits.is_empty()) {
+		// TODO: generate all non-skip groups, key=name, value = Vec<Commit>,
+		// maintaining order of commit_parsers
+		let mut all_groups = IndexMap::new();
+		if let Some(commit_parsers) = &config.git.commit_parsers {
+			for parser in commit_parsers {
+				if let (Some(group), Some(skip)) = (&parser.group, &parser.skip) {
+					if !skip && !group.is_empty() {
+						all_groups.entry(group.clone()).or_insert_with(Vec::new);
+					}
+				}
+			}
+		}
+
+		// TODO: manually group all commits to group
+		for commit in release.commits.iter() {
+			if let Some(group) = &commit.group {
+				if !group.is_empty() {
+					all_groups
+						.entry(group.clone())
+						.or_insert_with(Vec::new)
+						.push(commit.clone());
+				}
+			}
+		}
+
+		// TODO: remove all empty groups
+		all_groups.retain(|_, commits| !commits.is_empty());
+
+		// TODO: assign all_groups to release
+		release.all_groups = all_groups;
 	}
 
 	Ok(releases)

@@ -14,6 +14,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use indexmap::map::IndexMap;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -23,6 +24,8 @@ pub struct Release<'a> {
 	pub version:   Option<String>,
 	/// Commits made for the release.
 	pub commits:   Vec<Commit<'a>>,
+	/// Grouped view of the commits.
+	pub all_groups : IndexMap<String, Vec<Commit<'a>>>,
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]
 	pub commit_id: Option<String>,
